@@ -28,25 +28,55 @@ def help():
     print "httpclient.py [GET/POST] [URL]\n"
 
 class HTTPRequest(object):
+
     def __init__(self, code=200, body=""):
         self.code = code
         self.body = body
 
 class HTTPClient(object):
-    #def get_host_port(self,url):
+    def get_host_port(self,url):
+        try:
+            remote_ip = socket.gethostbyname(url)
+        except socket.gaierror:
+            # Could not resolve IP
+            print 'Hostname could not be resolved... Exiting'
+            sys.exit()
+        else:
+            print 'Ip address of ' + url + ' is ' + remote_ip
+            return remote_ip
 
     def connect(self, host, port):
         # use sockets!
-        return None
+        try:
+        # Create an AF_INET, STREAM socket (TCP)
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        except socket.error, msg:
+            print 'Failed to create socket. Error code: ' + str(msg[0]) + ' , Error message : ' + msg[1]
+            sys.exit()
+ 
+        print 'Socket Created'
+        # Connect to remote server
+        remote_ip = self.get_host_port(host)
+        s.connect((remote_ip, port))
+        print 'Socket Connected to ' + host + ' on ip ' + remote_ip
+
+        return s
 
     def get_code(self, data):
-        return None
+        # Identify HTTP Return Code
+        HTTPCode = 500
+
+        return HTTPCode
 
     def get_headers(self,data):
-        return None
+        # Parse HTTP Return Header
+        headers = ""
+        return headers
 
     def get_body(self, data):
-        return None
+        # Parse HTTP Return Content
+        body = ""
+        return body
 
     # read everything from the socket
     def recvall(self, sock):
@@ -60,9 +90,22 @@ class HTTPClient(object):
                 done = not part
         return str(buffer)
 
+    def get_host(url):
+        url.
+
     def GET(self, url, args=None):
         code = 500
         body = ""
+
+        host = ""
+        port = 8080
+        path = ""
+
+        # Connect to specified host
+        s = self.connect(host, port)
+
+
+
         return HTTPRequest(code, body)
 
     def POST(self, url, args=None):
