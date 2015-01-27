@@ -90,27 +90,45 @@ class HTTPClient(object):
                 done = not part
         return str(buffer)
 
-    def get_host(url):
-        url.
+    def get_params(self, url):
+        params = url.split(':')
+        host = ""
+        path = ""
+        port = 80
+        # Extract host, path, and port from URL
+        if len(params) > 2:
+            # Port is specified
+            host = params[1][2:]
+            path = params[-1]
+            port_end = path.find('/')
+            port = path[:port_end]
+            path = path[port_end:]
+
+        else:
+            # Port is not specified; defaults to port 80
+            host = params[1][2:]
+            path = params[1][-1:]
+
+        return host, path, port
 
     def GET(self, url, args=None):
         code = 500
         body = ""
-
-        host = ""
-        port = 8080
-        path = ""
+        host, path, port = self.get_params(url)
 
         # Connect to specified host
         s = self.connect(host, port)
-
-
 
         return HTTPRequest(code, body)
 
     def POST(self, url, args=None):
         code = 500
         body = ""
+        host, path, port = self.get_params(url)
+
+        # Connect to specified host
+        s = self.connect(host, port)
+
         return HTTPRequest(code, body)
 
     def command(self, url, command="GET", args=None):
@@ -126,6 +144,8 @@ if __name__ == "__main__":
         help()
         sys.exit(1)
     elif (len(sys.argv) == 3):
-        print client.command( sys.argv[1], sys.argv[2] )
+        # arguments flipped to comply with  project specifications
+        print client.command( sys.argv[2], sys.argv[1] )
     else:
-        print client.command( command, sys.argv[1] )    
+        # arguments flipped to comply with  project specifications
+        print client.command( sys.argv[1], command )    
