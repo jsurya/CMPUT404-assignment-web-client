@@ -106,8 +106,12 @@ class HTTPClient(object):
 
         else:
             # Port is not specified; defaults to port 80
-            host = params[1][2:]
+            host = params[1][2:-1]
             path = params[1][-1:]
+
+        print host
+        print path
+        print port
 
         return host, path, port
 
