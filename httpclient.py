@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
-# Copyright 2013 Abram Hindle
+# Copyright 2015 Paul Nhan, Jessica Surya
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,6 +17,11 @@
 # Do not use urllib's HTTP GET and POST mechanisms.
 # Write your own HTTP GET and POST
 # The point is to understand what you have to send and get experience with it
+
+# CMPUT 410 Winter 2015 Assignment Submission
+# Due: February 2. 2015
+# Original assignment creator: Abram Hindle
+# Assignment Contributors: Paul Nhan (pnhan), Jessica Surya (jsurya)
 
 import sys
 import socket
@@ -37,13 +42,13 @@ class HTTPClient(object):
     def get_host_port(self,url):
         try:
             remote_ip = socket.gethostbyname(url)
+            print 'Ip address of ' + url + ' is ' + remote_ip
+            return remote_ip
+
         except socket.gaierror:
             # Could not resolve IP
             print 'Hostname could not be resolved... Exiting'
-            sys.exit()
-        else:
-            print 'Ip address of ' + url + ' is ' + remote_ip
-            return remote_ip
+            sys.exit()           
 
     def connect(self, host, port):
         # use sockets!
@@ -59,23 +64,26 @@ class HTTPClient(object):
         remote_ip = self.get_host_port(host)
         s.connect((remote_ip, port))
         print 'Socket Connected to ' + host + ' on ip ' + remote_ip
-
         return s
 
     def get_code(self, data):
         # Identify HTTP Return Code
-        HTTPCode = 500
-
-        return HTTPCode
+        index = data.find("\r\n")
+        fragment = data[:index]
+        fragment = fragment.split(" ")
+        code =  int(fragment[1])
+        return code
 
     def get_headers(self,data):
         # Parse HTTP Return Header
-        headers = ""
+        index = data.find("\r\n\r\n")
+        headers = data[0:index]
         return headers
 
     def get_body(self, data):
         # Parse HTTP Return Content
-        body = ""
+        index = data.find("\r\n\r\n")
+        body = data[index:]
         return body
 
     # read everything from the socket
@@ -100,28 +108,49 @@ class HTTPClient(object):
             # Port is specified
             host = params[1][2:]
             path = params[-1]
-            port_end = path.find('/')
-            port = path[:port_end]
-            path = path[port_end:]
+
+            if "/" in path:
+                port_end = path.find('/')
+                port_string = path[:port_end]
+                path = path[port_end:]
+                port = int(port_string)
+            else:
+                port_string = int(path)
+                path = ""
 
         else:
             # Port is not specified; defaults to port 80
-            host = params[1][2:-1]
-            path = params[1][-1:]
-
-        print host
-        print path
-        print port
+            host = params[1][2:]
+            if "/" in host:
+                host_end = host.find("/")
+                host = host[:host_end]
+                path = host[host_end:]
+            else:
+                host = host
+                path = ""
+        # print host
+        # print path
+        # print port
 
         return host, path, port
 
     def GET(self, url, args=None):
-        code = 500
-        body = ""
         host, path, port = self.get_params(url)
 
         # Connect to specified host
         s = self.connect(host, port)
+        message = "GET /" + path + " HTTP/1.1\r\nHost: " + host + "\r\nAccept:*/*\r\nConnection:close\r\n\r\n"
+
+        try:
+            s.sendall(message)
+        except socket.error:
+            print("Sending data failed")
+            sys.exit()
+
+        data = self.recvall(s)
+        code = self.get_code(data)
+        header = self.get_headers(data)
+        body = self.get_body(data)
 
         return HTTPRequest(code, body)
 
@@ -132,6 +161,24 @@ class HTTPClient(object):
 
         # Connect to specified host
         s = self.connect(host, port)
+
+        if args != None:
+            encoding = urllib.urlencode(args)
+        else:
+            encoding = ''
+
+        message = "POST /" + path +  " HTTP/1.1\r\nHost: " + host + "\r\nAccept: */*\r\nContent-Length: " + str(len(encoding)) + "\r\nContent-Type: application/x-www-form-urlencoded\r\n\r\n" + encoding
+
+        try:
+            s.sendall(message)
+        except socket.error:
+            print("Sending data failed")
+            sys.exit()
+
+        data = self.recvall(s)
+        code = self.get_code(data)
+        header = self.get_headers(data)
+        body = self.get_body(data)
 
         return HTTPRequest(code, body)
 
